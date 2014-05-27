@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Filename: ui.py
 """
@@ -38,7 +37,7 @@ def main():
     description = """Organize a folder of images into sub-folders based on the order of sorting parameters."""
 
     parser = argparse.ArgumentParser(description=description)
-    
+
     # From Jeff Terrace <jterrace@gmail.com>
     class OrderedAction(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
