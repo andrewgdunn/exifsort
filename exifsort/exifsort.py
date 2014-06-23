@@ -14,6 +14,7 @@ __license__ = "Check root folder LICENSE file"
 __email__ = "andrew.g.dunn@gmail.com"
 
 import os
+import shutil
 import argparse
 import exifread
 import datetime
@@ -47,7 +48,7 @@ def cli():
                         help='Sort by Date')
     parser.add_argument('-t', '--time', nargs=0, action=OrderedAction,
                         help='Sort by DateTime (to the minute)')
-    parser.add_argument('-c', '--camera', nargs=0, action=OrderedAction,
+    parser.add_argument('-n', '--model', nargs=0, action=OrderedAction,
                         help='Sort by Camera Body')
     parser.add_argument('-l', '--lens', nargs=0, action=OrderedAction,
                         help='Sort by Lens')
@@ -62,7 +63,7 @@ def cli():
 
     args = parser.parse_args()
 
-    # Need moar sanity checks before dumping to main
+    # Need more sanity checks before dumping to main
     if not os.path.exists(args.input):
         print('Input path does not exist')
         return
@@ -71,50 +72,16 @@ def cli():
 
 
 def main(input, output, order):
-    """
-    Do:
-     - search for files to move
-     - for each file:
-        - read exif
-        - match contents with known values
-        - create path (based on order)
-        - move file
-    """
-    # Move this to JSON!
-    # meta is our canonical dictionary of things we can parse
-    meta  = {
-        'date': ['Image DateTime'],
-        'time': ['Image DateTime'],
-        'camera': ['Image Model'],
-        'lens': ['EXIF LensModel'],
-        'orientation': ['Image Orientation'],
-        'aperture': ['EXIF ApertureValue'],
-        'make': ['Image Make'],
-        'fnumber': ['EXIF FNumber']
-    }
-
-    # Move this to JSON parsing of config!
     ext_img = ['jpg', 'jpeg', 'cr2', 'nef', 'rw2', 'arw', 'srf', 'sr2']
     ext_img += map(lambda x: x.upper(), ext_img)
-    # ext_vid = ['mov', 'avi', 'mkv', 'm4v', 'mpeg', 'ogg']
-    # ext_vid += map(lambda x: x.upper(), ext_vid)
+    ext_vid = ['mov', 'avi', 'mkv', 'm4v', 'mpeg', 'ogg']
+    ext_vid += map(lambda x: x.upper(), ext_vid)
 
     for image in search(input, ext_img):
-        path = []
-        exif_data = exifread.process_file(open(image), details=False,
-                                          stop_tag='JPEGThumbnail')
-
+        exif = exifread.process_file(open(image), details=False)
         camera = Canon()
-
-        for meta_key in order:
-            # in the future we would likely need to iterate through the meta
-            # value with a try/catch because it is a list. We're cheating with
-            # indexing 0 right now
-            u_exif = str(exif_data[meta[meta_key][0]])
-            print u_exif
-            p_exif = camera.catalog(meta_key, u_exif)
-            print p_exif
-
+        dest = [camera.process(key, camera.lookup(key, exif)) for key in order]
+        copy(image, dest)
 
 
 def search(path, extensions):
@@ -135,6 +102,14 @@ def search(path, extensions):
     return sorted(file_list)
 
 
+def copy(source, dest):
+    print dest
+    # shutil.copy2(source, os.path.join(dest))
+
+def move(source, dest):
+    pass
+
+
 class Canon(object):
     """ Each make will have its own object and we'll use the catalog pattern to
     call the methods statically from the main sorting loop.
@@ -143,63 +118,77 @@ class Canon(object):
     """
 
     def __init__(self):
-        self.static_methods = {
+        self.staticmethods = {
             'date': self.format_date,
             'time': self.format_time,
-            'camera': self.format_camera,
+            'model': self.format_model,
             'lens': self.format_lens,
             'orientation': self.format_orientation,
-            'aperture': self.format_aperature,
-            'make': self.format_make,
-            'fnumber': self.format_fnumber
+            'make': self.format_make
+        }
+        # likely need to load this from a file (JSON)
+        self.metaindex = {
+            'date': ['Image DateTime'],
+            'time': ['Image DateTime'],
+            'model': ['Image Model'],
+            'lens': ['EXIF LensModel'],
+            'orientation': ['Image Orientation'],
+            'make': ['Image Make']
         }
 
-    def catalog(self, meta, payload):
-        if meta in self.static_methods.keys():
-            return self.static_methods[meta](payload)
+    def lookup(self, meta, exif):
+        if meta in self.metaindex.keys():
+            # we really should do a search here, but instead we're going to
+            # select the first element in the list. (for now)
+            return str(exif[self.metaindex[meta][0]])
+        else:
+            print('lookup failed, that key is not in metaindex')
+
+    def process(self, meta, payload):
+        if meta in self.staticmethods.keys():
+            return self.staticmethods[meta](payload)
+        else:
+            print('process failed, that key is not in staticmethods')
 
     @staticmethod
     def format_date(payload):
-        """ Returns list of datetime as year, month, day
+        """ example: '2013:08:05 17:39:46'
+            return: '[2013, 8, 5]'
         """
         parse_format = '%Y:%m:%d %H:%M:%S'
         d = datetime.datetime.strptime(payload, parse_format)
-        return [d.year, d.month, d.day]
+        return d.year, d.month, d.day
 
     @staticmethod
     def format_time(payload):
-        """ Returns list of datetime to the minute
+        """ example: '2013:08:05 17:39:46'
+            return: '[2013, 8, 5, 17, 39]'
         """
         parse_format = '%Y:%m:%d %H:%M:%S'
         d = datetime.datetime.strptime(payload, parse_format)
         return [d.year, d.month, d.day, d.hour, d.minute]
 
     @staticmethod
-    def format_camera(payload):
-        """ Returns the same value for now, until we need formatting
-        """
-        return payload
-
-    @staticmethod
     def format_lens(payload):
-        """ Hard coded for my specific use case: 'EF-S18-135mm f/3.5-, ... ]'
-        Likely need to check to see if this is a valid name for a path as there
-        is bound to be forward slashes that will make windows puke.
+        """ example: 'EF-S18-135mm f/3.5-, ... ]'
+            result: ''EF-S18-135mm'
         """
-        return payload.strip(',')[0][:-1]
-
-    @staticmethod
-    def format_orientation(payload):
         return payload.split()[0]
 
     @staticmethod
-    def format_aperature(payload):
-        return payload
+    def format_orientation(payload):
+        """ example: 'Horizontal (normal)'
+            result: 'Horizontal'
+        """
+        return payload.split()[0]
 
     @staticmethod
     def format_make(payload):
         return payload
 
     @staticmethod
-    def format_fnumber(payload):
-        return payload
+    def format_model(payload):
+        """ example: 'Canon EOS 60D'
+            result: '60D'
+        """
+        return payload.split()[-1]
