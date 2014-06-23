@@ -79,9 +79,11 @@ def main(input, output, order):
 
     for image in search(input, ext_img):
         exif = exifread.process_file(open(image), details=False)
+        # need to make a helper utility/catalog for different camera makes
+        # right now we'll use Canon just to get the thing working
         camera = Canon()
         dest = [camera.process(key, camera.lookup(key, exif)) for key in order]
-        copy(image, dest)
+        copy(image, output, dest)
 
 
 def search(path, extensions):
@@ -102,12 +104,18 @@ def search(path, extensions):
     return sorted(file_list)
 
 
-def copy(source, dest):
-    print dest
-    # shutil.copy2(source, os.path.join(dest))
+def copy(source, output, dest):
+    path = os.path.join(os.path.abspath(output), *dest)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    shutil.copy2(source, path)
 
-def move(source, dest):
-    pass
+
+def move(source, output, dest):
+    path = os.path.join(os.path.abspath(output), *dest)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    shutil.move(source, path)
 
 
 class Canon(object):
@@ -157,16 +165,18 @@ class Canon(object):
         """
         parse_format = '%Y:%m:%d %H:%M:%S'
         d = datetime.datetime.strptime(payload, parse_format)
-        return d.year, d.month, d.day
+        date = [d.year, d.month, d.day]
+        return '/'.join(str(n) for n in date)
 
     @staticmethod
     def format_time(payload):
         """ example: '2013:08:05 17:39:46'
-            return: '[2013, 8, 5, 17, 39]'
+            return: 2013/8/5/17/39'
         """
         parse_format = '%Y:%m:%d %H:%M:%S'
         d = datetime.datetime.strptime(payload, parse_format)
-        return [d.year, d.month, d.day, d.hour, d.minute]
+        date = [d.year, d.month, d.day, d.hour, d.minute, d.second]
+        return '/'.join(str(n) for n in date)
 
     @staticmethod
     def format_lens(payload):
