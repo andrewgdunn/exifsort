@@ -18,7 +18,7 @@ Sort images into directories based on their exchangeable image file format
 ###Simple Example###
 This example is just using a single sort parameter for date:
 
-	$ python exifsort.py --date ~/Downloads/60D
+	$ python exifsort.py --date ~/Downloads/60D . 
 
 There are 4 photos in this folder, with the corresponding EXIF dates:
 
@@ -29,28 +29,28 @@ There are 4 photos in this folder, with the corresponding EXIF dates:
 
 This should result in the creation of 3 folders within the 60D folder
 
-	~/Downloads/60D/2004.10.05 (DSC_0081.JPG)
+	~/Downloads/60D/200.10.05 (DSC_0081.JPG)
 	~/Downloads/60D/2010.10.04 (IMG_0002.JPG)
 	~/Downloads/60D/2010.12.26 (IMG_0520.JPG, IMG_1131.JPG)
 
 ###Fancy Example###
 This example chains several parameters:
 
-	$ python exifsort.py --date --camera --orient ~/Downloads/60D
+	$ python exifsort.py --date --make --model --orientation ~/Downloads/60D .
 
 There are 4 photos in this folder, with the corresponding EXIF daters:
 
-	~/Downloads/60D/DSC_0081.JPG, 2004:10:05 12:15:22, Nikon D70, Horizontal
-	~/Downloads/60D/IMG_0002.JPG, 2010:10:04 21:08:09, Canon EOS 60D, Horizontal
-	~/Downloads/60D/IMG_0520.JPG, 2010:12:26 11:26:36, Canon EOS 60D, Vertical
-	~/Downloads/60D/IMG_1131.JPG, 2010:12:26 14:81:18, Canon EOS 60D, Horizontal
+	~/Downloads/60D/DSC_0081.JPG, 2004:10:05 12:15:22, Nikon, D70, Horizontal
+	~/Downloads/60D/IMG_0002.JPG, 2010:10:04 21:08:09, Canon, 60D, Horizontal
+	~/Downloads/60D/IMG_0520.JPG, 2010:12:26 11:26:36, Canon, 60D, Vertical
+	~/Downloads/60D/IMG_1131.JPG, 2010:12:26 14:81:18, Canon, 60D, Horizontal
 
 This should result in the creation of many folders/subdirs, Something that looks like this:
 
-	~/Downloads/60D/2004.10.05/Nikon D70/Horizontal 	(DSC_0081.JPG)
-	~/Downloads/60D/2010.10.04/Canon EOS 60D/Horizontal (IMG_0002.JPG)
-	~/Downloads/60D/2010.12.26/Canon EOS 60D/Vertical	(IMG_0520.JPG)
-	~/Downloads/60D/2010.12.26/Canon EOS 60D/Horizontal	(IMG_1131.JPG)
+	~/Downloads/60D/2004.10.05/Nikon/D70/Horizontal 	(DSC_0081.JPG)
+	~/Downloads/60D/2010.10.04/Canon/60D/Horizontal (IMG_0002.JPG)
+	~/Downloads/60D/2010.12.26/Canon/60D/Vertical	(IMG_0520.JPG)
+	~/Downloads/60D/2010.12.26/Canon/60D/Horizontal	(IMG_1131.JPG)
 
 
 ###Dependencies###

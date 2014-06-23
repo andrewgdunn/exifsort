@@ -166,7 +166,7 @@ class Canon(object):
         parse_format = '%Y:%m:%d %H:%M:%S'
         d = datetime.datetime.strptime(payload, parse_format)
         date = [d.year, d.month, d.day]
-        return '/'.join(str(n) for n in date)
+        return '.'.join(str(n) for n in date)
 
     @staticmethod
     def format_time(payload):
@@ -176,7 +176,7 @@ class Canon(object):
         parse_format = '%Y:%m:%d %H:%M:%S'
         d = datetime.datetime.strptime(payload, parse_format)
         date = [d.year, d.month, d.day, d.hour, d.minute, d.second]
-        return '/'.join(str(n) for n in date)
+        return '.'.join(str(n) for n in date)
 
     @staticmethod
     def format_lens(payload):
